@@ -1,0 +1,47 @@
+diff --git a/vendor/assets/javascripts/angular-resource.js b/vendor/assets/javascripts/angular-resource.js
+index 7e99e3c..cafeae0 100644
+--- a/vendor/assets/javascripts/angular-resource.js
++++ b/vendor/assets/javascripts/angular-resource.js
+@@ -306,7 +306,8 @@ angular.module('ngResource', ['ng']).
+     };
+ 
+ 
+-    function ResourceFactory(url, paramDefaults, actions) {
++    // Added `ctor` parameter to inject a custom resource constructor.
++    function ResourceFactory(url, paramDefaults, actions, ctor) {
+       var route = new Route(url);
+ 
+       actions = extend({}, DEFAULT_ACTIONS, actions);
+@@ -323,6 +324,12 @@ angular.module('ngResource', ['ng']).
+         copy(value || {}, this);
+       }
+ 
++      // Use the given constructor if provided, otherwise just copy values.
++      if (ctor) {
++        console.log("redefining constructor")
++        Resource = ctor;
++      }
++
+       forEach(actions, function(action, name) {
+         var hasBody = action.method == 'POST' || action.method == 'PUT' || action.method == 'PATCH';
+         Resource[name] = function(a1, a2, a3, a4) {
+@@ -379,7 +386,9 @@ angular.module('ngResource', ['ng']).
+                     value.push(new Resource(item));
+                   });
+                 } else {
+-                  copy(data, value);
++                  // use an instance instead of raw data, so we can populate
++                  // the existing "promised" instance with the correct attributes.
++                  copy(new Resource(data), value);
+                 }
+               }
+               (success||noop)(value, response.headers);
+@@ -390,7 +399,7 @@ angular.module('ngResource', ['ng']).
+ 
+ 
+         Resource.bind = function(additionalParamDefaults){
+-          return ResourceFactory(url, extend({}, paramDefaults, additionalParamDefaults), actions);
++          return ResourceFactory(url, extend({}, paramDefaults, additionalParamDefaults), actions, ctor);
+         };
+ 
+ 
